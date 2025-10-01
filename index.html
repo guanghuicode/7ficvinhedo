@@ -132,6 +132,12 @@
             background-color: #e0890f;
         }
         
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            width: auto;
+        }
+        
         .progress-container {
             margin: 20px 0;
         }
@@ -296,6 +302,47 @@
             font-size: 0.9rem;
             color: #666;
             margin-bottom: 10px;
+        }
+        
+        .participant-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .participant-item:last-child {
+            border-bottom: none;
+        }
+        
+        .participant-actions {
+            display: flex;
+            gap: 5px;
+        }
+        
+        /* Estilos para impressão dos QR Codes */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            .admin-section,
+            .admin-section * {
+                visibility: visible;
+            }
+            .admin-section {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+            .qrcode-card {
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+            button {
+                display: none !important;
+            }
         }
         
         @media (max-width: 768px) {
@@ -470,7 +517,8 @@
                 </div>
                 
                 <div class="card">
-                    <h2 class="card-title">Participantes Cadastrados</h2>
+                    <h2 class="card-title">Gerenciar Participantes</h2>
+                    <p>Total de participantes: <span id="total-participants">0</span></p>
                     <div id="participant-list">
                         <!-- Lista de participantes será preenchida via JavaScript -->
                     </div>
@@ -516,6 +564,7 @@
         const participantList = document.getElementById('participant-list');
         const qrcodesList = document.getElementById('qrcodes-list');
         const printAllQrBtn = document.getElementById('print-all-qr');
+        const totalParticipants = document.getElementById('total-participants');
         const tabs = document.querySelectorAll('.tab');
         const tabContents = document.querySelectorAll('.tab-content');
         
@@ -648,7 +697,13 @@
             
             drawButton.addEventListener('click', performDraw);
             printAllQrBtn.addEventListener('click', function() {
+                // Adicionar classe de impressão temporariamente
+                document.body.classList.add('printing');
                 window.print();
+                // Remover a classe após um tempo
+                setTimeout(() => {
+                    document.body.classList.remove('printing');
+                }, 500);
             });
         });
         
@@ -815,9 +870,9 @@
             }
         }
         
-        // Administração - FUNÇÃO CORRIGIDA PARA GERAR QR CODES
+        // Administração
         function updateAdminPanel() {
-            const qualified = participants.filter(p => p.checkpoints.length >= 3);
+            totalParticipants.textContent = participants.length;
             
             // Lista de participantes
             participantList.innerHTML = '';
@@ -829,21 +884,36 @@
             participants.forEach(participant => {
                 const isValidated = participant.checkpoints.length >= 3;
                 const participantItem = document.createElement('div');
-                participantItem.className = 'checkpoint-item';
-                participantItem.style.textAlign = 'left';
-                participantItem.style.padding = '10px';
-                participantItem.style.marginBottom = '10px';
-                participantItem.style.backgroundColor = isValidated ? 'rgba(76, 201, 240, 0.1)' : 'white';
+                participantItem.className = 'participant-item';
                 participantItem.innerHTML = `
-                    <div><strong>${participant.nome}</strong></div>
-                    <div>CPF: ${formatCPF(participant.cpf)}</div>
-                    <div>Checkpoints: ${participant.checkpoints.length}/3</div>
-                    <div class="${isValidated ? 'status-valid' : 'status-pending'}">
-                        ${isValidated ? 'Qualificado' : 'Não qualificado'}
+                    <div>
+                        <strong>${participant.nome}</strong><br>
+                        <small>CPF: ${formatCPF(participant.cpf)}</small><br>
+                        <small>Checkpoints: ${participant.checkpoints.length}/3</small>
+                    </div>
+                    <div class="participant-actions">
+                        <button class="btn-danger btn-small" onclick="removeParticipant('${participant.id}')">Remover</button>
                     </div>
                 `;
                 participantList.appendChild(participantItem);
             });
+        }
+        
+        // Função para remover participante
+        function removeParticipant(participantId) {
+            if (confirm('Tem certeza que deseja remover este participante?')) {
+                participants = participants.filter(p => p.id !== participantId);
+                saveParticipants();
+                updateAdminPanel();
+                
+                // Se o usuário atual foi removido, fazer logout
+                if (currentUser && currentUser.id === participantId) {
+                    currentUser = null;
+                    localStorage.removeItem('currentUser');
+                    alert('Seu cadastro foi removido.');
+                    location.reload();
+                }
+            }
         }
         
         // FUNÇÃO CORRIGIDA - Gerar QR Codes
