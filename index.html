@@ -3,11 +3,274 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Sorteio - Checkpoints</title>
+    <title>Sistema de Sorteio com QR Code</title>
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
     <style>
-        /* ... (manter todos os estilos anteriores) ... */
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --success: #4cc9f0;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --danger: #e63946;
+            --warning: #fca311;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fb;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            padding: 25px;
+            margin-bottom: 25px;
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card-title {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: var(--primary);
+            border-bottom: 2px solid var(--light);
+            padding-bottom: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        input, select, button {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: var(--secondary);
+        }
+        
+        .btn-success {
+            background-color: var(--success);
+        }
+        
+        .btn-success:hover {
+            background-color: #3aa8d0;
+        }
+        
+        .btn-danger {
+            background-color: var(--danger);
+        }
+        
+        .btn-danger:hover {
+            background-color: #c1121f;
+        }
+        
+        .btn-warning {
+            background-color: var(--warning);
+        }
+        
+        .btn-warning:hover {
+            background-color: #e0890f;
+        }
+        
+        .progress-container {
+            margin: 20px 0;
+        }
+        
+        .progress-bar {
+            height: 20px;
+            background-color: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        
+        .progress {
+            height: 100%;
+            background: linear-gradient(90deg, var(--success), var(--primary));
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+        
+        .progress-text {
+            text-align: center;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        .checkpoint-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .checkpoint-item {
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .checkpoint-item.valid {
+            border-color: var(--success);
+            background-color: rgba(76, 201, 240, 0.1);
+        }
+        
+        .checkpoint-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        
+        .checkpoint-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .checkpoint-status {
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .status-valid {
+            color: var(--success);
+        }
+        
+        .status-pending {
+            color: var(--warning);
+        }
+        
+        .scanner-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        #qr-video {
+            width: 100%;
+            max-width: 400px;
+            border-radius: 10px;
+            border: 2px solid var(--primary);
+        }
+        
+        #scanner-status {
+            margin: 15px 0;
+            font-weight: 600;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+            overflow-x: auto;
+        }
+        
+        .tab {
+            padding: 12px 20px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        
+        .tab.active {
+            border-bottom: 3px solid var(--primary);
+            color: var(--primary);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .participant-info {
+            background: linear-gradient(135deg, #4cc9f0, #4361ee);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .admin-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid var(--warning);
+        }
+        
+        .admin-section h3 {
+            color: var(--warning);
+            margin-bottom: 10px;
+        }
         
         .qrcodes-container {
             display: grid;
@@ -34,6 +297,20 @@
             color: #666;
             margin-bottom: 10px;
         }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .checkpoint-list {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            }
+            
+            .qrcodes-container {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+        }
     </style>
 </head>
 <body>
@@ -44,30 +321,144 @@
         </header>
         
         <div class="tabs">
-            <div class="tab active" data-tab="inscricao">Inscrição</div>
+            <div class="tab active" data-tab="inscricao">Fazer Inscrição</div>
+            <div class="tab" data-tab="login">Já sou Cadastrado</div>
             <div class="tab" data-tab="dashboard">Meu Progresso</div>
             <div class="tab" data-tab="scanner">Escanear QR Code</div>
-            <div class="tab" data-tab="admin">Administração</div>
-            <div class="tab" data-tab="qrcodes">Gerar QR Codes</div> <!-- NOVA ABA -->
         </div>
         
-        <!-- ... (manter abas anteriores) ... -->
-        
-        <!-- NOVA ABA: Gerar QR Codes -->
-        <div id="qrcodes" class="tab-content">
+        <!-- Aba de Inscrição -->
+        <div id="inscricao" class="tab-content active">
             <div class="card">
-                <h2 class="card-title">Gerar QR Codes dos Checkpoints</h2>
-                <p>Esta área é para os organizadores gerarem os QR Codes que serão colocados nas salas.</p>
+                <h2 class="card-title">Faça sua Inscrição no Sorteio</h2>
+                <p>Preencha seus dados abaixo para participar. Depois, visite as salas do evento e escaneie os QR Codes para validar sua participação.</p>
                 
-                <div class="form-group">
-                    <label for="admin-password-qr">Senha de Administração</label>
-                    <input type="password" id="admin-password-qr" placeholder="Digite a senha">
+                <form id="registration-form">
+                    <div class="form-group">
+                        <label for="nome">Nome Completo</label>
+                        <input type="text" id="nome" placeholder="Seu nome completo" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="cpf">CPF</label>
+                        <input type="text" id="cpf" placeholder="Apenas números (11 dígitos)" required>
+                    </div>
+                    <button type="submit">Realizar Inscrição</button>
+                </form>
+            </div>
+            
+            <div class="card">
+                <h2 class="card-title">Como Funciona</h2>
+                <ol style="padding-left: 20px; margin-bottom: 15px;">
+                    <li>Faça sua inscrição com nome e CPF</li>
+                    <li>Visite pelo menos 3 salas diferentes do evento</li>
+                    <li>Em cada sala, escaneie o QR Code na entrada</li>
+                    <li>Acompanhe seu progresso na aba "Meu Progresso"</li>
+                    <li>Com 3 checkpoints validados, você está no sorteio!</li>
+                </ol>
+                <p><strong>Prêmio:</strong> [Descreva o prêmio do sorteio aqui]</p>
+            </div>
+        </div>
+        
+        <!-- Aba de Login -->
+        <div id="login" class="tab-content">
+            <div class="card">
+                <h2 class="card-title">Acesse Sua Conta</h2>
+                <p>Se você já fez sua inscrição, digite seu CPF para acessar seu progresso.</p>
+                
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="login-cpf">CPF</label>
+                        <input type="text" id="login-cpf" placeholder="Apenas números (11 dígitos)" required>
+                    </div>
+                    <button type="submit" class="btn-success">Acessar Minha Conta</button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Aba de Dashboard -->
+        <div id="dashboard" class="tab-content">
+            <div class="participant-info hidden" id="user-info">
+                <h2>Olá, <span id="user-name"></span>!</h2>
+                <p>CPF: <span id="user-cpf"></span></p>
+            </div>
+            
+            <div class="card">
+                <h2 class="card-title">Meu Progresso no Sorteio</h2>
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress" id="progress-bar" style="width: 0%"></div>
+                    </div>
+                    <div class="progress-text" id="progress-text">0 de 3 checkpoints validados</div>
                 </div>
-                <button id="admin-login-qr" class="btn-warning">Acessar Gerador de QR Codes</button>
                 
-                <div id="qrcodes-panel" class="hidden">
-                    <h3>QR Codes dos Checkpoints</h3>
-                    <p>Imprima estes QR Codes e cole em cada sala correspondente:</p>
+                <p id="qualification-status" class="status-pending">Você ainda não está qualificado para o sorteio</p>
+                
+                <h3>Checkpoints do Evento</h3>
+                <div class="checkpoint-list" id="checkpoint-list">
+                    <!-- Checkpoints serão preenchidos via JavaScript -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Aba do Scanner -->
+        <div id="scanner" class="tab-content">
+            <div class="card">
+                <h2 class="card-title">Escanear QR Code do Checkpoint</h2>
+                <p>Quando estiver em uma sala do evento, escaneie o QR Code na entrada para validar sua visita.</p>
+                
+                <div class="scanner-container">
+                    <video id="qr-video" playsinline></video>
+                    <div id="scanner-status">Clique em "Iniciar Câmera" para começar</div>
+                    <button id="start-scanner" class="btn-success">Iniciar Câmera</button>
+                    <button id="stop-scanner" class="btn-danger hidden">Parar Câmera</button>
+                </div>
+                
+                <div id="scan-result" class="hidden">
+                    <h3>Checkpoint Validado!</h3>
+                    <p id="scan-message"></p>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2 class="card-title">Dicas para Escanear</h2>
+                <ul style="padding-left: 20px;">
+                    <li>Certifique-se de ter boa iluminação</li>
+                    <li>Mantenha o QR Code dentro da área da câmera</li>
+                    <li>Approxime ou distancie o celular até o QR Code ficar nítido</li>
+                    <li>Cada QR Code só pode ser escaneado uma vez por participante</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Seção Administrativa (não é uma aba, fica no final) -->
+        <div class="admin-section">
+            <h3>Área do Organizador</h3>
+            <p>Esta seção é apenas para os organizadores do evento.</p>
+            
+            <div class="form-group">
+                <label for="admin-password">Senha de Administração</label>
+                <input type="password" id="admin-password" placeholder="Digite a senha de administração">
+            </div>
+            <button id="admin-login" class="btn-warning">Acessar Painel Admin</button>
+            
+            <div id="admin-panel" class="hidden">
+                <div class="card">
+                    <h2 class="card-title">Realizar Sorteio</h2>
+                    <p>Clique no botão abaixo para sortear um vencedor entre os participantes qualificados.</p>
+                    <button id="draw-button" class="btn-warning">Realizar Sorteio</button>
+                    
+                    <div id="winner-result" class="hidden">
+                        <div class="participant-info">
+                            <h2>Parabéns ao Vencedor!</h2>
+                            <p id="winner-name"></p>
+                            <p id="winner-cpf"></p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h2 class="card-title">Gerar QR Codes dos Checkpoints</h2>
+                    <p>Estes são os QR Codes que devem ser impressos e colocados nas salas do evento:</p>
                     
                     <div class="qrcodes-container" id="qrcodes-list">
                         <!-- QR Codes serão gerados aqui -->
@@ -76,78 +467,385 @@
                     <div class="form-group">
                         <button id="print-all-qr" class="btn-success">Imprimir Todos os QR Codes</button>
                     </div>
-                    
-                    <h3>Adicionar Novo Checkpoint</h3>
-                    <form id="new-checkpoint-form">
-                        <div class="form-group">
-                            <label for="checkpoint-name">Nome do Checkpoint</label>
-                            <input type="text" id="checkpoint-name" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="checkpoint-desc">Descrição</label>
-                            <input type="text" id="checkpoint-desc" required>
-                        </div>
-                        <button type="submit">Adicionar Checkpoint</button>
-                    </form>
+                </div>
+                
+                <div class="card">
+                    <h2 class="card-title">Participantes Cadastrados</h2>
+                    <div id="participant-list">
+                        <!-- Lista de participantes será preenchida via JavaScript -->
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // ... (manter todo o código JavaScript anterior) ...
+        // Dados da aplicação
+        let participants = JSON.parse(localStorage.getItem('participants')) || [];
+        let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
+        let checkpoints = JSON.parse(localStorage.getItem('checkpoints')) || [
+            { id: 'checkpoint1', name: 'Recepção', description: 'Área de boas-vindas' },
+            { id: 'checkpoint2', name: 'Auditório', description: 'Palestras principais' },
+            { id: 'checkpoint3', name: 'Exposição', description: 'Estandes e demonstrações' },
+            { id: 'checkpoint4', name: 'Workshop', description: 'Oficinas práticas' },
+            { id: 'checkpoint5', name: 'Networking', description: 'Área de relacionamento' }
+        ];
         
-        // NOVAS VARIÁVEIS E ELEMENTOS
-        const adminLoginQrBtn = document.getElementById('admin-login-qr');
-        const qrcodesPanel = document.getElementById('qrcodes-panel');
+        // Elementos DOM
+        const registrationForm = document.getElementById('registration-form');
+        const loginForm = document.getElementById('login-form');
+        const userInfo = document.getElementById('user-info');
+        const userName = document.getElementById('user-name');
+        const userCpf = document.getElementById('user-cpf');
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const qualificationStatus = document.getElementById('qualification-status');
+        const checkpointList = document.getElementById('checkpoint-list');
+        const startScannerBtn = document.getElementById('start-scanner');
+        const stopScannerBtn = document.getElementById('stop-scanner');
+        const qrVideo = document.getElementById('qr-video');
+        const scannerStatus = document.getElementById('scanner-status');
+        const scanResult = document.getElementById('scan-result');
+        const scanMessage = document.getElementById('scan-message');
+        const adminLoginBtn = document.getElementById('admin-login');
+        const adminPanel = document.getElementById('admin-panel');
+        const drawButton = document.getElementById('draw-button');
+        const winnerResult = document.getElementById('winner-result');
+        const winnerName = document.getElementById('winner-name');
+        const winnerCpf = document.getElementById('winner-cpf');
+        const participantList = document.getElementById('participant-list');
         const qrcodesList = document.getElementById('qrcodes-list');
-        const newCheckpointForm = document.getElementById('new-checkpoint-form');
         const printAllQrBtn = document.getElementById('print-all-qr');
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
         
-        // NOVAS FUNÇÕES PARA GERAR QR CODES
+        // Variáveis do scanner
+        let videoStream = null;
+        let scanning = false;
+        let canvasElement = document.createElement('canvas');
+        let canvasContext = canvasElement.getContext('2d');
+        
+        // Inicialização
         document.addEventListener('DOMContentLoaded', function() {
-            // ... (manter inicialização anterior) ...
+            // Se já tem usuário logado, mostrar dashboard
+            if (currentUser) {
+                showDashboard();
+                // Ativar a aba do dashboard
+                tabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(tc => tc.classList.remove('active'));
+                document.querySelector('[data-tab="dashboard"]').classList.add('active');
+                document.getElementById('dashboard').classList.add('active');
+            }
             
-            // Login no gerador de QR Codes
-            adminLoginQrBtn.addEventListener('click', function() {
-                const password = document.getElementById('admin-password-qr').value;
+            // Configurar tabs
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabId = tab.getAttribute('data-tab');
+                    
+                    // Ativar tab clicada
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tabContents.forEach(tc => tc.classList.remove('active'));
+                    
+                    tab.classList.add('active');
+                    document.getElementById(tabId).classList.add('active');
+                    
+                    // Parar scanner ao mudar de aba
+                    if (tabId !== 'scanner' && scanning) {
+                        stopScanner();
+                    }
+                    
+                    // Atualizar dashboard se for a aba ativa
+                    if (tabId === 'dashboard' && currentUser) {
+                        updateDashboard();
+                    }
+                });
+            });
+            
+            // Formulário de inscrição
+            registrationForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const nome = document.getElementById('nome').value;
+                const cpf = document.getElementById('cpf').value.replace(/\D/g, '');
+                
+                // Validar CPF (apenas verificação básica de 11 dígitos)
+                if (cpf.length !== 11) {
+                    alert('CPF deve conter 11 dígitos.');
+                    return;
+                }
+                
+                // Verificar se CPF já existe
+                if (participants.find(p => p.cpf === cpf)) {
+                    alert('Este CPF já está cadastrado! Acesse a aba "Já sou Cadastrado" para ver seu progresso.');
+                    return;
+                }
+                
+                // Criar novo participante
+                const newParticipant = {
+                    id: generateId(),
+                    nome: nome,
+                    cpf: cpf,
+                    checkpoints: [],
+                    registrationDate: new Date().toISOString()
+                };
+                
+                participants.push(newParticipant);
+                saveParticipants();
+                
+                // Fazer login automaticamente
+                loginUser(newParticipant);
+                
+                alert('Inscrição realizada com sucesso! Agora você pode escanear os QR Codes nas salas.');
+                
+                // Ir para a aba do dashboard
+                tabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(tc => tc.classList.remove('active'));
+                document.querySelector('[data-tab="dashboard"]').classList.add('active');
+                document.getElementById('dashboard').classList.add('active');
+                
+                registrationForm.reset();
+            });
+            
+            // Formulário de login
+            loginForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const cpf = document.getElementById('login-cpf').value.replace(/\D/g, '');
+                const participant = participants.find(p => p.cpf === cpf);
+                
+                if (participant) {
+                    loginUser(participant);
+                    alert('Login realizado com sucesso!');
+                    
+                    // Ir para a aba do dashboard
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tabContents.forEach(tc => tc.classList.remove('active'));
+                    document.querySelector('[data-tab="dashboard"]').classList.add('active');
+                    document.getElementById('dashboard').classList.add('active');
+                    
+                    loginForm.reset();
+                } else {
+                    alert('CPF não encontrado. Faça sua inscrição primeiro na aba "Fazer Inscrição".');
+                }
+            });
+            
+            // Scanner de QR Code
+            startScannerBtn.addEventListener('click', startScanner);
+            stopScannerBtn.addEventListener('click', stopScanner);
+            
+            // Administração
+            adminLoginBtn.addEventListener('click', function() {
+                const password = document.getElementById('admin-password').value;
+                // Senha simples para demonstração
                 if (password === 'admin123') {
-                    qrcodesPanel.classList.remove('hidden');
+                    adminPanel.classList.remove('hidden');
+                    updateAdminPanel();
                     generateAllQRCodes();
                 } else {
                     alert('Senha incorreta!');
                 }
             });
             
-            // Adicionar novo checkpoint
-            newCheckpointForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                const name = document.getElementById('checkpoint-name').value;
-                const desc = document.getElementById('checkpoint-desc').value;
-                const newId = 'checkpoint' + (checkpoints.length + 1);
-                
-                const newCheckpoint = {
-                    id: newId,
-                    name: name,
-                    description: desc
-                };
-                
-                checkpoints.push(newCheckpoint);
-                saveCheckpoints();
-                generateAllQRCodes();
-                
-                newCheckpointForm.reset();
-                alert('Checkpoint adicionado com sucesso!');
-            });
-            
-            // Imprimir todos os QR Codes
+            drawButton.addEventListener('click', performDraw);
             printAllQrBtn.addEventListener('click', function() {
                 window.print();
             });
         });
         
-        // Função para gerar todos os QR Codes
+        // Funções da aplicação
+        function generateId() {
+            return 'participant_' + Math.random().toString(36).substr(2, 9);
+        }
+        
+        function saveParticipants() {
+            localStorage.setItem('participants', JSON.stringify(participants));
+        }
+        
+        function saveCheckpoints() {
+            localStorage.setItem('checkpoints', JSON.stringify(checkpoints));
+        }
+        
+        function loginUser(participant) {
+            currentUser = participant;
+            localStorage.setItem('currentUser', JSON.stringify(participant));
+            showDashboard();
+        }
+        
+        function showDashboard() {
+            userInfo.classList.remove('hidden');
+            userName.textContent = currentUser.nome;
+            userCpf.textContent = formatCPF(currentUser.cpf);
+            updateDashboard();
+        }
+        
+        function updateDashboard() {
+            const validatedCount = currentUser.checkpoints.length;
+            const progressPercent = Math.min((validatedCount / 3) * 100, 100);
+            
+            progressBar.style.width = `${progressPercent}%`;
+            progressText.textContent = `${validatedCount} de 3 checkpoints validados`;
+            
+            if (validatedCount >= 3) {
+                qualificationStatus.textContent = 'Parabéns! Você está qualificado para o sorteio!';
+                qualificationStatus.className = 'status-valid';
+            } else {
+                qualificationStatus.textContent = `Você precisa validar mais ${3 - validatedCount} checkpoint(s) para o sorteio`;
+                qualificationStatus.className = 'status-pending';
+            }
+            
+            // Atualizar lista de checkpoints
+            checkpointList.innerHTML = '';
+            checkpoints.forEach(checkpoint => {
+                const isChecked = currentUser.checkpoints.includes(checkpoint.id);
+                const checkpointItem = document.createElement('div');
+                checkpointItem.className = `checkpoint-item ${isChecked ? 'valid' : ''}`;
+                checkpointItem.innerHTML = `
+                    <div class="checkpoint-icon">${isChecked ? '✅' : '📍'}</div>
+                    <div class="checkpoint-name">${checkpoint.name}</div>
+                    <div class="checkpoint-status ${isChecked ? 'status-valid' : 'status-pending'}">
+                        ${isChecked ? 'Validado' : 'Pendente'}
+                    </div>
+                `;
+                checkpointList.appendChild(checkpointItem);
+            });
+        }
+        
+        function formatCPF(cpf) {
+            return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+        }
+        
+        // Scanner de QR Code
+        function startScanner() {
+            startScannerBtn.classList.add('hidden');
+            stopScannerBtn.classList.remove('hidden');
+            scannerStatus.textContent = 'Posicione o QR Code na frente da câmera';
+            scanning = true;
+            
+            // Acessar câmera
+            navigator.mediaDevices.getUserMedia({ 
+                video: { 
+                    facingMode: "environment",
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                } 
+            })
+            .then(function(stream) {
+                videoStream = stream;
+                qrVideo.srcObject = stream;
+                qrVideo.play();
+                requestAnimationFrame(scan);
+            })
+            .catch(function(err) {
+                console.error("Erro ao acessar a câmera: ", err);
+                scannerStatus.textContent = "Erro ao acessar a câmera. Verifique as permissões.";
+                stopScanner();
+            });
+        }
+        
+        function stopScanner() {
+            startScannerBtn.classList.remove('hidden');
+            stopScannerBtn.classList.add('hidden');
+            scanResult.classList.add('hidden');
+            scanning = false;
+            
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+                videoStream = null;
+            }
+        }
+        
+        function scan() {
+            if (!scanning) return;
+            
+            if (qrVideo.readyState === qrVideo.HAVE_ENOUGH_DATA) {
+                canvasElement.width = qrVideo.videoWidth;
+                canvasElement.height = qrVideo.videoHeight;
+                
+                canvasContext.drawImage(qrVideo, 0, 0, canvasElement.width, canvasElement.height);
+                
+                const imageData = canvasContext.getImageData(0, 0, canvasElement.width, canvasElement.height);
+                const code = jsQR(imageData.data, imageData.width, imageData.height);
+                
+                if (code) {
+                    // QR Code detectado!
+                    handleScannedCode(code.data);
+                }
+            }
+            
+            if (scanning) {
+                requestAnimationFrame(scan);
+            }
+        }
+        
+        function handleScannedCode(codeData) {
+            // Verificar se é um checkpoint válido
+            const checkpoint = checkpoints.find(cp => cp.id === codeData);
+            
+            if (!checkpoint) {
+                scannerStatus.textContent = 'QR Code inválido. Este não é um checkpoint do evento.';
+                return;
+            }
+            
+            // Verificar se o usuário já validou este checkpoint
+            if (currentUser.checkpoints.includes(checkpoint.id)) {
+                scannerStatus.textContent = `Checkpoint "${checkpoint.name}" já foi validado anteriormente.`;
+            } else {
+                // Adicionar checkpoint ao usuário
+                currentUser.checkpoints.push(checkpoint.id);
+                
+                // Atualizar na lista de participantes
+                const participantIndex = participants.findIndex(p => p.id === currentUser.id);
+                if (participantIndex !== -1) {
+                    participants[participantIndex] = currentUser;
+                    saveParticipants();
+                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                }
+                
+                scannerStatus.textContent = `Checkpoint "${checkpoint.name}" validado com sucesso!`;
+                scanMessage.textContent = `Você validou o checkpoint: ${checkpoint.name}`;
+                scanResult.classList.remove('hidden');
+                
+                // Atualizar dashboard
+                updateDashboard();
+                
+                // Parar scanner após alguns segundos
+                setTimeout(() => {
+                    if (scanning) stopScanner();
+                }, 3000);
+            }
+        }
+        
+        // Administração
+        function updateAdminPanel() {
+            const qualified = participants.filter(p => p.checkpoints.length >= 3);
+            
+            // Lista de participantes
+            participantList.innerHTML = '';
+            if (participants.length === 0) {
+                participantList.innerHTML = '<p>Nenhum participante cadastrado ainda.</p>';
+                return;
+            }
+            
+            participants.forEach(participant => {
+                const isValidated = participant.checkpoints.length >= 3;
+                const participantItem = document.createElement('div');
+                participantItem.className = 'checkpoint-item';
+                participantItem.style.textAlign = 'left';
+                participantItem.style.padding = '10px';
+                participantItem.style.marginBottom = '10px';
+                participantItem.style.backgroundColor = isValidated ? 'rgba(76, 201, 240, 0.1)' : 'white';
+                participantItem.innerHTML = `
+                    <div><strong>${participant.nome}</strong></div>
+                    <div>CPF: ${formatCPF(participant.cpf)}</div>
+                    <div>Checkpoints: ${participant.checkpoints.length}/3</div>
+                    <div class="${isValidated ? 'status-valid' : 'status-pending'}">
+                        ${isValidated ? 'Qualificado' : 'Não qualificado'}
+                    </div>
+                `;
+                participantList.appendChild(participantItem);
+            });
+        }
+        
         function generateAllQRCodes() {
             qrcodesList.innerHTML = '';
             
@@ -168,7 +866,6 @@
             });
         }
         
-        // Função para gerar um QR Code individual
         function generateQRCode(data, element) {
             // Limpar elemento
             element.innerHTML = '';
@@ -186,7 +883,27 @@
             });
         }
         
-        // ... (manter o resto das funções anteriores) ...
+        function performDraw() {
+            // Filtrar participantes qualificados (com pelo menos 3 checkpoints)
+            const qualifiedParticipants = participants.filter(p => p.checkpoints.length >= 3);
+            
+            if (qualifiedParticipants.length === 0) {
+                alert("Não há participantes qualificados para o sorteio (mínimo de 3 checkpoints validados).");
+                return;
+            }
+            
+            // Realizar sorteio
+            const winnerIndex = Math.floor(Math.random() * qualifiedParticipants.length);
+            const winner = qualifiedParticipants[winnerIndex];
+            
+            // Exibir resultado
+            winnerName.textContent = winner.nome;
+            winnerCpf.textContent = `CPF: ${formatCPF(winner.cpf)}`;
+            winnerResult.classList.remove('hidden');
+            
+            // Rolar para o resultado
+            winnerResult.scrollIntoView({ behavior: 'smooth' });
+        }
     </script>
 </body>
 </html>
