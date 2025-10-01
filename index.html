@@ -815,7 +815,7 @@
             }
         }
         
-        // Administração
+        // Administração - FUNÇÃO CORRIGIDA PARA GERAR QR CODES
         function updateAdminPanel() {
             const qualified = participants.filter(p => p.checkpoints.length >= 3);
             
@@ -846,6 +846,7 @@
             });
         }
         
+        // FUNÇÃO CORRIGIDA - Gerar QR Codes
         function generateAllQRCodes() {
             qrcodesList.innerHTML = '';
             
@@ -861,25 +862,36 @@
                 
                 qrcodesList.appendChild(qrCard);
                 
-                // Gerar o QR Code
+                // Gerar o QR Code - MÉTODO CORRIGIDO
                 generateQRCode(checkpoint.id, document.getElementById(`qr-display-${checkpoint.id}`));
             });
         }
         
+        // FUNÇÃO CORRIGIDA - Gerar QR Code individual
         function generateQRCode(data, element) {
             // Limpar elemento
             element.innerHTML = '';
             
-            // Gerar QR Code
-            QRCode.toCanvas(element, data, {
+            // Método confiável usando toDataURL
+            QRCode.toDataURL(data, {
                 width: 150,
                 margin: 1,
                 color: {
                     dark: '#000000',
                     light: '#FFFFFF'
                 }
-            }, function(error) {
-                if (error) console.error(error);
+            }, function(error, url) {
+                if (error) {
+                    console.error("Erro ao gerar QR Code:", error);
+                    element.innerHTML = '<p style="color: red;">Erro ao gerar QR Code</p>';
+                } else {
+                    const img = document.createElement('img');
+                    img.src = url;
+                    img.alt = `QR Code para ${data}`;
+                    img.style.width = '150px';
+                    img.style.height = '150px';
+                    element.appendChild(img);
+                }
             });
         }
         
