@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Sorteio - Checkpoints</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+    <style>
+        /* ... (manter todos os estilos anteriores) ... */
+        
+        .qrcodes-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .qrcode-card {
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .qrcode-card h4 {
+            margin: 10px 0 5px 0;
+            color: var(--primary);
+        }
+        
+        .qrcode-card p {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Evento Sorteio</h1>
+            <p class="subtitle">Escaneie os QR Codes nas salas para participar do sorteio</p>
+        </header>
+        
+        <div class="tabs">
+            <div class="tab active" data-tab="inscricao">Inscrição</div>
+            <div class="tab" data-tab="dashboard">Meu Progresso</div>
+            <div class="tab" data-tab="scanner">Escanear QR Code</div>
+            <div class="tab" data-tab="admin">Administração</div>
+            <div class="tab" data-tab="qrcodes">Gerar QR Codes</div> <!-- NOVA ABA -->
+        </div>
+        
+        <!-- ... (manter abas anteriores) ... -->
+        
+        <!-- NOVA ABA: Gerar QR Codes -->
+        <div id="qrcodes" class="tab-content">
+            <div class="card">
+                <h2 class="card-title">Gerar QR Codes dos Checkpoints</h2>
+                <p>Esta área é para os organizadores gerarem os QR Codes que serão colocados nas salas.</p>
+                
+                <div class="form-group">
+                    <label for="admin-password-qr">Senha de Administração</label>
+                    <input type="password" id="admin-password-qr" placeholder="Digite a senha">
+                </div>
+                <button id="admin-login-qr" class="btn-warning">Acessar Gerador de QR Codes</button>
+                
+                <div id="qrcodes-panel" class="hidden">
+                    <h3>QR Codes dos Checkpoints</h3>
+                    <p>Imprima estes QR Codes e cole em cada sala correspondente:</p>
+                    
+                    <div class="qrcodes-container" id="qrcodes-list">
+                        <!-- QR Codes serão gerados aqui -->
+                    </div>
+                    
+                    <div class="form-group">
+                        <button id="print-all-qr" class="btn-success">Imprimir Todos os QR Codes</button>
+                    </div>
+                    
+                    <h3>Adicionar Novo Checkpoint</h3>
+                    <form id="new-checkpoint-form">
+                        <div class="form-group">
+                            <label for="checkpoint-name">Nome do Checkpoint</label>
+                            <input type="text" id="checkpoint-name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="checkpoint-desc">Descrição</label>
+                            <input type="text" id="checkpoint-desc" required>
+                        </div>
+                        <button type="submit">Adicionar Checkpoint</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ... (manter todo o código JavaScript anterior) ...
+        
+        // NOVAS VARIÁVEIS E ELEMENTOS
+        const adminLoginQrBtn = document.getElementById('admin-login-qr');
+        const qrcodesPanel = document.getElementById('qrcodes-panel');
+        const qrcodesList = document.getElementById('qrcodes-list');
+        const newCheckpointForm = document.getElementById('new-checkpoint-form');
+        const printAllQrBtn = document.getElementById('print-all-qr');
+        
+        // NOVAS FUNÇÕES PARA GERAR QR CODES
+        document.addEventListener('DOMContentLoaded', function() {
+            // ... (manter inicialização anterior) ...
+            
+            // Login no gerador de QR Codes
+            adminLoginQrBtn.addEventListener('click', function() {
+                const password = document.getElementById('admin-password-qr').value;
+                if (password === 'admin123') {
+                    qrcodesPanel.classList.remove('hidden');
+                    generateAllQRCodes();
+                } else {
+                    alert('Senha incorreta!');
+                }
+            });
+            
+            // Adicionar novo checkpoint
+            newCheckpointForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const name = document.getElementById('checkpoint-name').value;
+                const desc = document.getElementById('checkpoint-desc').value;
+                const newId = 'checkpoint' + (checkpoints.length + 1);
+                
+                const newCheckpoint = {
+                    id: newId,
+                    name: name,
+                    description: desc
+                };
+                
+                checkpoints.push(newCheckpoint);
+                saveCheckpoints();
+                generateAllQRCodes();
+                
+                newCheckpointForm.reset();
+                alert('Checkpoint adicionado com sucesso!');
+            });
+            
+            // Imprimir todos os QR Codes
+            printAllQrBtn.addEventListener('click', function() {
+                window.print();
+            });
+        });
+        
+        // Função para gerar todos os QR Codes
+        function generateAllQRCodes() {
+            qrcodesList.innerHTML = '';
+            
+            checkpoints.forEach(checkpoint => {
+                const qrCard = document.createElement('div');
+                qrCard.className = 'qrcode-card';
+                qrCard.innerHTML = `
+                    <h4>${checkpoint.name}</h4>
+                    <p>${checkpoint.description}</p>
+                    <div class="qr-code" id="qr-display-${checkpoint.id}"></div>
+                    <p><small>ID: ${checkpoint.id}</small></p>
+                `;
+                
+                qrcodesList.appendChild(qrCard);
+                
+                // Gerar o QR Code
+                generateQRCode(checkpoint.id, document.getElementById(`qr-display-${checkpoint.id}`));
+            });
+        }
+        
+        // Função para gerar um QR Code individual
+        function generateQRCode(data, element) {
+            // Limpar elemento
+            element.innerHTML = '';
+            
+            // Gerar QR Code
+            QRCode.toCanvas(element, data, {
+                width: 150,
+                margin: 1,
+                color: {
+                    dark: '#000000',
+                    light: '#FFFFFF'
+                }
+            }, function(error) {
+                if (error) console.error(error);
+            });
+        }
+        
+        // ... (manter o resto das funções anteriores) ...
+    </script>
+</body>
+</html>
